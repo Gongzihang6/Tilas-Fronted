@@ -5,7 +5,7 @@ import { ElMessage } from 'element-plus'
 const request = axios.create({
   // 基础路径，所有请求的URL都会自动拼接上这个前缀
   // 注意：这里的地址是你在vite.config.ts中配置的代理目标
-  baseURL: '/api', 
+  baseURL: '/api',    // 注意：这里 baseURL 后面不要加 /，这里指代http://localhost:8080
   timeout: 10000 // 请求超时时间
 })
 
@@ -22,11 +22,11 @@ request.interceptors.request.use(
   }
 )
 
-// 响应拦截器
+// 响应拦截器，Axios接收到后端响应数据后拦截，对数据进行预处理
 request.interceptors.response.use(
   response => {
     // 后端返回的数据结构是 { code, msg, data }
-    const res = response.data
+    const res = response.data   // 帮助过滤掉code和msg无用信息，获取响应数据
 
     // code 不为 1，表示操作失败
     if (res.code !== 1) {
@@ -40,7 +40,7 @@ request.interceptors.response.use(
       return Promise.reject(new Error(res.msg || 'Error'))
     } else {
       // code 为 1，表示操作成功，只返回 data 部分
-      return res.data
+      return res.data   // 对于分页员工查询，这里返回的就是PageResult<Employee>，也就是后端定义的PageBean
     }
   },
   error => {

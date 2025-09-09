@@ -57,7 +57,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getEmployeeListAPI, addEmployeeAPI } from '@/api/employee'
+import { getEmployeeListAPI, addEmployeeAPI, getEmployeeListByPageAPI } from '@/api/employee'
 import type { Employee, PageQuery, PageResult, ApiResponse } from '@/api/types' 
 import { ElMessage } from 'element-plus'
 import type { AxiosResponse } from 'axios'
@@ -95,19 +95,10 @@ const employeeForm = ref<Partial<Employee>>(getInitialForm())
 const fetchEmployeeList = async () => {
   loading.value = true
   try {
-    // 1. 【修正】使用正确的类型注解，让 TS 帮助我们检查
-    // getEmployeeListAPI 应该返回一个 Promise，其解析值为 AxiosResponse
-    // AxiosResponse 的泛型是后端返回的 Result 对象，即 ApiResponse<PageResult<Employee>>
-    const response: AxiosResponse<ApiResponse<PageResult<Employee>>> = await getEmployeeListAPI(pageQuery.value)
-    
-    // 2. 【核心修正】从正确的层级获取数据
-    // response.data -> Result 对象 { code, msg, data }
-    // response.data.data -> PageResult 对象 { total, records }
-    // response.data.data.records -> 员工数组 [ ... ]
-    employeeList.value = response.data.data.records
-    
-    // 3. 【核心修正】为 total 赋值
-    total.value = response.data.data.total
+    // 调用./api/employee.ts 中的 getEmployeeListByPageAPI 方法
+    const pageResult: PageResult<Employee> = await getEmployeeListByPageAPI(pageQuery.value)
+    employeeList.value = pageResult.records;
+    total.value = pageResult.total;
 
   } catch (error) {
     ElMessage.error('获取员工列表失败')
@@ -130,15 +121,24 @@ const handleOpenDialog = () => {
   dialogVisible.value = true
 }
 
-// 【代码简化】handleSubmit 函数可以更简洁
+/**
+ * @description 提交表单（新增/编辑）
+ */
 const handleSubmit = async () => {
+  // 【修正点 2】在提交前进行校验
+  if (!employeeForm.value.name || !employeeForm.value.username) {
+    ElMessage.warning('请填写姓名和用户名')
+    return
+  }
+
   try {
-    // 直接将表单数据传递给 API 函数即可
-    // Partial<Employee> 类型是兼容的
+    // 经过上面的 if 判断，TypeScript 知道 name 和 username 此时必定是 string 类型
+    // 所以可以直接将 employeeForm.value 传递，不再报错
     await addEmployeeAPI(employeeForm.value)
+    
     ElMessage.success('操作成功')
     dialogVisible.value = false
-    fetchEmployeeList()
+    fetchEmployeeList() // 成功后刷新列表
   } catch (error) {
     ElMessage.error('操作失败')
     console.error(error)
@@ -152,7 +152,6 @@ const handleEdit = (row: Employee) => {
 
 const handleDelete = (id: number) => {
   console.log('删除员工', id)
-  // 实际项目中应加入 ElMessageBox.confirm 确认框
 }
 </script>
 
