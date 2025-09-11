@@ -5,7 +5,8 @@ import { URL, fileURLToPath } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue()
+  ],
   server: {
     proxy: {
       // 使用 proxy 实例
