@@ -70,7 +70,11 @@
       <el-table-column prop="deptId" label="所属部门" :formatter="deptFormatter" />
       <el-table-column prop="jobId" label="职位" :formatter="jobFormatter"/>
       <el-table-column prop="entryDate" label="入职日期" />
-      <el-table-column prop="lastOpTime" label="最后操作时间" width="180"/>
+      <el-table-column 
+        prop="updateTime" 
+        label="最后操作时间" 
+        width="180"
+        :formatter="formatDateTime"/>
       <!-- 操作列 -->
       <el-table-column label="操作" width="150" fixed="right">
         <template #default="scope">
@@ -205,7 +209,7 @@
 import { ref, onMounted, reactive, computed } from 'vue'
 import { getEmployeeListByPageAPI, addEmployeeAPI, updateEmployeeAPI, deleteEmployeeAPI, getJobNameById, batchDeleteEmployeeAPI} from '@/api/employee'
 import { JOB_MAP, type Dept, type Employee, type PageQuery, type PageResult, type WorkExperience } from '@/api/types' 
-import { ElMessage, ElMessageBox, formatter } from 'element-plus'
+import { dayjs, ElMessage, ElMessageBox, formatter } from 'element-plus'
 import type { FormInstance, FormRules, UploadProps } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getDeptListAPI } from '@/api/dept'
@@ -311,7 +315,14 @@ onMounted(async () => {
 const deptFormatter = (row: Employee): string => {
   return deptMap.value.get(row.deptId) || '未知部门';
 };
-
+// 时间显示格式化函数
+const formatDateTime = (row: Employee, column: any, cellValue: string): string => {
+  if (!cellValue) {
+    return '';
+  }
+  // 2. 使用 dayjs 进行格式化
+  return dayjs(cellValue).format('YYYY-MM-DD HH:mm:ss');
+}
 const handleSearch = () => {
   pageQuery.value.page = 1 // 搜索时回到第一页
   fetchEmployeeList()
@@ -342,7 +353,7 @@ const handleOpenAddDialog = () => {
 const handleOpenEditDialog = (row: Employee) => {
   isEdit.value = true
   // 使用深拷贝防止修改表单时影响表格数据
-  employeeForm.value = JSON.parse(JSON.stringify(row))
+  employeeForm.value = JSON.parse(JSON.stringify(row))  // 点击编辑按钮自动触发，将当前行原始数据深拷贝给employeeForm表单，用于表单回显
   dialogVisible.value = true
 }
 
