@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import { JOB_MAP, type Employee, type PageQuery, type PageResult } from './types' // 引入类型定义
+import { JOB_MAP, type Employee, type LoginParams, type PageQuery, type PageResult } from './types' // 引入类型定义
 import qs from 'qs'; // <--- 1. 引入 qs 库
 
 /**
@@ -16,7 +16,7 @@ export function getJobNameById(jobId: number): string {
  * 分页查询获取员工列表
  * 这里调用request接收Axios向后端请求的响应数据并返回
  */
-export const getEmployeeListByPageAPI = (params: PageQuery): Promise<PageResult<Employee>> => {
+export const getEmployeeListByPageAPI = (params: PageQuery) => {
   // request 的泛型可以帮助 TypeScript 推断，但函数返回值的显式注解更重要
   return request({
     url: '/emps',
@@ -67,5 +67,17 @@ export const updateEmployeeAPI = (params: Partial<Employee>): Promise<any> => { 
     url: '/emps',
     method: 'put',
     data: params
+  })
+}
+
+
+/**
+ * 员工登录的接口
+ */
+export const loginAPI = (loginParams: LoginParams): Promise<any> => { // 登录时返回的 data 是 null，所以可以用 any 或 void
+  return request({
+    url: '/login',
+    method: 'post',
+    data: { username: loginParams.username, password: loginParams.password }
   })
 }

@@ -1,3 +1,5 @@
+import router from '@/router';
+import { useUserStore } from '@/stores/user';
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
@@ -11,47 +13,57 @@ const request = axios.create({
 
 // 请求拦截器
 request.interceptors.request.use(
-  config => {
-    // 在发送请求前做些什么
-    // 比如，未来可以在这里统一添加 token
-    return config
-  },
-  error => {
-    // 对请求错误做些什么
-    return Promise.reject(error)
-  }
-)
+    config => {
+        const userStore = useUserStore();
+        if (userStore.token) {
+            // 为请求头添加Authorization字段
+            config.headers['Authorization'] = `Bearer ${userStore.token}`;
+        }
+        return config;
+    },
+    error => Promise.reject(error)
+);
 
-// 响应拦截器，Axios接收到后端响应数据后拦截，对数据进行预处理
+// --- 响应拦截器 (核心修改) ---
 request.interceptors.response.use(
+  /**
+   * 如果你想获取http信息，如响应头或状态
+   * 请返回 response => response
+  */
   response => {
-    // 后端返回的数据结构是 { code, msg, data }
-    const res = response.data   // 帮助过滤掉code和msg无用信息，获取响应数据
-
-    // code 不为 1，表示操作失败
-    if (res.code !== 1) {
-      // 使用 Element Plus 的 Message 组件提示错误信息
-      ElMessage({
-        message: res.msg || 'Error',
-        type: 'error',
-        duration: 5 * 1000
-      })
-      // 返回一个被拒绝的 Promise，这样 .then 就不会执行，而是会进入 .catch
-      return Promise.reject(new Error(res.msg || 'Error'))
-    } else {
-      // code 为 1，表示操作成功，只返回 data 部分
-      return res.data   // 对于分页员工查询，这里返回的就是PageResult<Employee>，也就是后端定义的PageBean
-    }
+    // 【核心】直接返回完整的 response 对象
+    // 不要做任何全局的成功/失败判断和弹窗
+    // 将这些逻辑交给具体的业务页面去处理
+    return response;
   },
   error => {
-    // 对响应错误做点什么
-    ElMessage({
-      message: error.message,
-      type: 'error',
-      duration: 5 * 1000
-    })
-    return Promise.reject(error)
-  }
-)
+    console.error('请求发生错误: ', error); // for debug
 
+    // 对响应错误做点什么
+    if (error.response) {
+      // 请求已发出，但服务器响应的状态码不在 2xx 范围
+      switch (error.response.status) {
+        case 401:
+          // Token失效的处理
+          localStorage.removeItem('token');
+          router.push('/login');
+          ElMessage.error('认证失败或登录已过期，请重新登录');
+          break;
+        case 403:
+          ElMessage.error('您没有权限访问此资源');
+          break;
+        case 404:
+          ElMessage.error('请求的资源未找到');
+          break;
+        default:
+          ElMessage.error(error.response.data.msg || '服务器内部错误');
+      }
+    } else {
+      // 一些请求在发送时就会出错，比如网络问题
+      ElMessage.error('网络错误，请检查您的网络连接');
+    }
+    
+    return Promise.reject(error);
+  }
+);
 export default request

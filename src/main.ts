@@ -15,6 +15,8 @@ import router from './router'
 
 // 3. 引入 Pinia
 import { createPinia } from 'pinia'
+// 引入 pinia-plugin-persistedstate
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
 
 

@@ -280,7 +280,8 @@ const fetchEmployeeList = async () => {
       entryDateBegin: searchForm.entryDate?.[0],
       entryDateEnd: searchForm.entryDate?.[1]
     }
-    const pageResult: PageResult<Employee> = await getEmployeeListByPageAPI(query)
+    const response = await getEmployeeListByPageAPI(query)
+    const pageResult: PageResult<Employee> = response.data.data;
     employeeList.value = pageResult.records;
     total.value = pageResult.total;
 
@@ -293,17 +294,37 @@ const fetchEmployeeList = async () => {
 
 // 1. 存储从API获取的原始部门列表
 const deptList = ref<Dept[]>([]);
+const fetchDeptList = async () => {
+  loading.value = true;
+  try {
+    // 【核心修改2】
+    const response = await getDeptListAPI(); // response 是完整的axios响应
+    const result = response.data; // result 才是 { code, msg, data }
 
+    if (result && result.code === 1) {
+      // 确保 result.data 是一个数组
+      deptList.value = Array.isArray(result.data) ? result.data : [];
+    } else {
+      ElMessage.error(result.msg || '获取部门列表失败');
+    }
+  } catch (error) {
+    // catch 块由拦截器处理过了，这里可以只在控制台记录
+    console.error('获取部门列表失败的最终错误:', error);
+  } finally {
+    loading.value = false;
+  }
+};
 // 2. 使用 computed 创建一个部门 ID -> 名称的 Map，以便高效查找
 //    当 deptList 变化时，deptMap 会自动重新计算
 const deptMap = computed(() => {
+  console.log('deptMap:',deptMap);
   return new Map(deptList.value.map((dept: { id?: number; name: string }) => [dept.id, dept.name]));
 });
 
 // 3. 在 onMounted 中获取部门列表
 onMounted(async () => {
   try {
-    deptList.value = await getDeptListAPI();
+    fetchDeptList();
     // 同时也获取员工列表...
     fetchEmployeeList();
   } catch (error) {

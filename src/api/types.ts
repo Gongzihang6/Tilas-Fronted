@@ -135,3 +135,11 @@ export interface EmployeeListQuery extends PageQuery {
   begin?: string;    // 最早入职日期 (可选, 格式 'YYYY-MM-DD')
   end?: string;      // 最晚入职日期 (可选, 格式 'YYYY-MM-DD')
 }
+
+/**
+ * 登录信息的参数结构
+ */
+export interface LoginParams { // 登录时返回的 data 是 null，所以可以用 any 或 void
+  username: string;
+  password: string;
+}
