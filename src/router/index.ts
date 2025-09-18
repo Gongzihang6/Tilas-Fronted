@@ -19,8 +19,13 @@ const router = createRouter({
           path: '/depts',
           name: 'department',
           component: () => import('@/views/DeptManage.vue')
-        }
+        },
         // ... 其他需要登录才能访问的页面，都放在这里
+        {
+          path: '/stats',
+          name: 'statistics',
+          component: () => import('@/views/StatsDashboard.vue')
+        }
       ]
     },
     // --- 路由规则 2：登录页 (与主布局平级) ---

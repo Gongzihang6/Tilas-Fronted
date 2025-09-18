@@ -26,6 +26,10 @@
           <span>部门管理</span>
         </el-menu-item>
         <!-- 未来可以添加更多菜单项 -->
+        <el-menu-item index="/stats">
+          <el-icon><DataLine /></el-icon>
+          <span>数据统计</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
